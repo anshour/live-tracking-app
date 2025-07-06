@@ -1,8 +1,20 @@
 export interface Tracker {
   id: string;
   name: string;
-  lastSeen: Date;
-  latitude: number;
-  longitude: number;
+  socketClientId: string;
+  lastSeen: string;
   isOnline: boolean;
+  coordinate: Coordinate | null;
+}
+
+export interface TrackerHistory {
+  id: string;
+  trackerId: string;
+  coordinate: Coordinate;
+  timestamp: string;
+}
+
+export interface Coordinate {
+  lat: number;
+  lng: number;
 }
