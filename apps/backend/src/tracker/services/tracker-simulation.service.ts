@@ -149,7 +149,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
       }
 
       if (this.simulationActive) {
-        const nextStatusDelay = Math.random() * 30000 + 45000; // 45-75 seconds
+        const nextStatusDelay = Math.random() * 30000 + 75000; 
         const timeoutId = setTimeout(() => {
           toggleStatus();
         }, nextStatusDelay);
@@ -157,7 +157,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
       }
     };
 
-    const initialDelay = Math.random() * 60000 + 30000; // 30-90 seconds
+    const initialDelay = Math.random() * 60000 + 120000; // 2-3 minutes
     const timeoutId = setTimeout(() => {
       toggleStatus();
     }, initialDelay);
