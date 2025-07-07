@@ -10,6 +10,7 @@ import {
 import toast from "react-hot-toast";
 import { Socket, io } from "socket.io-client";
 import { queryKeys } from "~/constants";
+import { useNavigatorOnline } from "~/hooks";
 import { useFetchTrackers } from "~/hooks/use-tracker";
 
 export type TrackerContextValue = {
@@ -26,7 +27,7 @@ export const TrackerContext = createContext<TrackerContextValue>({
   socket: null,
   trackers: [],
   selectedTracker: null,
-  setSelectedTracker: (t: Tracker | null) => {},
+  setSelectedTracker: () => {},
   subscribeTrackers: () => {},
   unsubscribeTrackers: () => {},
   status: "disconnected",
@@ -40,6 +41,7 @@ export const TrackerContextProvider = (props: any) => {
   const [status, setStatus] = useState<
     "connected" | "disconnected" | "reconnecting"
   >("disconnected");
+  const isNavigatorOnline = useNavigatorOnline();
   const { trackers: trackerData, refetch } = useFetchTrackers();
 
   const subscribeTrackers = useCallback(() => {
@@ -58,13 +60,9 @@ export const TrackerContextProvider = (props: any) => {
     (tracker: Tracker) => {
       setSelectedTracker((prevSelected) => {
         if (prevSelected?.id === tracker.id) {
-          console.log("Updating selected tracker:", tracker.id);
-
-          // Update tracker history in the query cache
           queryClient.invalidateQueries({
             queryKey: queryKeys.trackerHistories(tracker.id),
           });
-
           return tracker;
         }
         return prevSelected;
@@ -72,13 +70,11 @@ export const TrackerContextProvider = (props: any) => {
 
       setTrackers((prevTrackers) => {
         const index = prevTrackers.findIndex((t) => t.id === tracker.id);
-
         if (index !== -1) {
           return prevTrackers.map((t, i) =>
             i === index ? { ...t, ...tracker } : t
           );
         }
-
         return [...prevTrackers, tracker];
       });
     },
@@ -86,9 +82,7 @@ export const TrackerContextProvider = (props: any) => {
   );
 
   const removeTracker = useCallback((tracker: Tracker) => {
-    setTrackers((prevTrackers) =>
-      prevTrackers.filter((t) => t.id !== tracker.id)
-    );
+    setTrackers((prev) => prev.filter((t) => t.id !== tracker.id));
   }, []);
 
   const handleError = (error: any) => {
@@ -99,31 +93,32 @@ export const TrackerContextProvider = (props: any) => {
   const handleException = (exception: any) => {
     if (exception?.status === 401) {
       toast.error("You are not authorized to access this resource.");
-      return;
+    } else {
+      console.error("WebSocket exception:", exception);
     }
-
-    console.error("WebSocket exception:", exception);
   };
 
   useEffect(() => {
+    const token = localStorage.getItem("token") || "";
+    if (!token) return;
+
     const newSocket = io(`${process.env.NEXT_PUBLIC_BACKEND_URL}/socket`, {
-      auth: {
-        token: localStorage.getItem("token") || "",
-      },
-      autoConnect: true,
+      auth: { token },
+      autoConnect: false,
       reconnection: true,
     });
 
+    // Register event listeners
     newSocket.on("connect", () => {
+      console.log("✅ Connected to WebSocket server");
       setStatus("connected");
       refetch();
-      console.log("Connected to WebSocket server");
     });
 
     newSocket.on("disconnect", (reason) => {
+      console.log(`🚫 Disconnected: ${reason}`);
       setStatus("disconnected");
       refetch();
-      console.log(`Disconnected from WebSocket server. reason : ${reason}`);
     });
 
     newSocket.on("reconnect_attempt", () => {
@@ -145,21 +140,40 @@ export const TrackerContextProvider = (props: any) => {
       setStatus("disconnected");
     });
 
+    newSocket.on("connect_error", (err) => {
+      console.log("❌ Connect error:", err.message);
+    });
+
+    newSocket.on("exception", handleException);
+    newSocket.on("error", handleError);
+
     newSocket.on(TrackingEvents.TRACKER_REGISTERED, addOrUpdateTracker);
     newSocket.on(TrackingEvents.TRACKER_UPDATED, addOrUpdateTracker);
     newSocket.on(TrackingEvents.TRACKER_STOPPED, addOrUpdateTracker);
     newSocket.on(TrackingEvents.TRACKER_REMOVED, removeTracker);
 
-    newSocket.on("exception", handleException);
-    newSocket.on("error", handleError);
-
+    // Set socket after all listeners are ready
     setSocket(newSocket);
 
-    // Cleanup on unmount
     return () => {
+      newSocket.removeAllListeners();
+      newSocket.disconnect();
       newSocket.close();
     };
   }, []);
+
+  // Connect/disconnect socket based on online status
+  useEffect(() => {
+    if (!socket) return;
+
+    if (isNavigatorOnline) {
+      console.log("🌐 Online - connecting socket...");
+      socket.connect();
+    } else {
+      console.log("📴 Offline - disconnecting socket...");
+      socket.disconnect();
+    }
+  }, [isNavigatorOnline, socket]);
 
   useEffect(() => {
     if (trackerData) {
@@ -172,11 +186,11 @@ export const TrackerContextProvider = (props: any) => {
       value={{
         socket,
         trackers,
-        status,
         selectedTracker,
         setSelectedTracker,
         subscribeTrackers,
         unsubscribeTrackers,
+        status,
       }}
       {...props}
     />
