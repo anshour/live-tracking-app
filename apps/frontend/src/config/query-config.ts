@@ -1,16 +1,14 @@
 import { QueryClientConfig } from "@tanstack/react-query";
 
-
 export const queryConfig: QueryClientConfig = {
   defaultOptions: {
     queries: {
-      networkMode: "always",
-      refetchOnWindowFocus: false,
-      retry: false,
+      networkMode: "online",
+      retry: 2,
     },
     mutations: {
-      networkMode: "always",
-      retry: false,
+      networkMode: "online",
+      retry: 2,
     },
   },
 };
