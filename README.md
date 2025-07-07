@@ -204,15 +204,11 @@ pnpm --filter @livetracking/shared dev
 **Utility Functions:**
 
 - `calculateDistance()` → Haversine distance calculation
-- `TrackingEvents` → WebSocket event constants
 - Type definitions for API requests/responses
 
-**Features:**
+**Constants:**
 
-- Shared validation schemas with Zod
-- Common utility functions for distance calculations
-- Centralized type definitions for type safety
-- Event constants for WebSocket communication
+- `TrackingEvents` → WebSocket event constants
 
 ---
 
@@ -229,7 +225,7 @@ pnpm --filter @livetracking/shared dev
 
 ## 🚧 Known Limitations
 
-- No persistent database; all data is in-memory
+- No persistent database, all data is in-memory
 - Simple WebSocket auth using JWT (no refresh tokens strategy)
 - History data reset on server restart
 
