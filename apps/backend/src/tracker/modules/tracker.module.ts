@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { TrackerController } from '../controllers/tracker.controller';
 import { TrackerService } from '../services/tracker.service';
@@ -9,7 +8,7 @@ import { TrackerSimulationController } from '../controllers/tracker-simulation.c
 import { AuthSocketGuard } from 'src/auth/guards/auth-socket.guard';
 
 @Module({
-  imports: [JwtModule.register({}), ConfigModule],
+  imports: [ConfigModule],
   controllers: [TrackerController, TrackerSimulationController],
   providers: [
     TrackerService,
