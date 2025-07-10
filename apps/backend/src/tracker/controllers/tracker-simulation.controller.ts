@@ -1,7 +1,9 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { TrackerSimulationService } from '../services/tracker-simulation.service';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('api/trackers/simulation')
+@UseGuards(AuthGuard)
 export class TrackerSimulationController {
   constructor(private readonly simulationService: TrackerSimulationService) {}
   @Post('start')

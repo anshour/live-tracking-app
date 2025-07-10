@@ -1,8 +1,10 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { TrackerService } from '../services/tracker.service';
 import { Tracker, TrackerHistory } from '@livetracking/shared';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('api/trackers')
+@UseGuards(AuthGuard)
 export class TrackerController {
   constructor(private readonly trackerService: TrackerService) {}
 
