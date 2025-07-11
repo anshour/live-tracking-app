@@ -1,8 +1,8 @@
 # 🚀 Live Tracking Application
 
 ## Introduction
-A fullstack real-time location tracking system built using **Turborepo**, **NestJS**, and **NextJS + Google Map**. This project demonstrates real-time updates, efficient architecture, and a clean monorepo setup.
----
+A fullstack real-time location tracking system built using **Turborepo**, **NestJS**, and **NextJS + Google Map**. This project demonstrates real-time updates, efficient architecture, and a clean monorepo setup
+
 ## 📁 Screenshots
 <img width="1451" alt="Screenshot 2025-07-06 at 22 27 15" src="https://github.com/user-attachments/assets/dab7d37b-5e16-4d35-8d48-1ff57f3d35f2" />
 <img width="1452" alt="Screenshot 2025-07-06 at 22 27 24" src="https://github.com/user-attachments/assets/75497f0b-7d9a-4851-9487-6b9b11a3513c" />
