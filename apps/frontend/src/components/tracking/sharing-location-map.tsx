@@ -3,17 +3,12 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { useTrackerData } from "~/context";
 import { MAP_CONTAINER_STYLE, MAP_DEFAULT_CENTER } from "~/constants";
 import toast from "react-hot-toast";
-import {
-  Coordinate,
-  TrackingEvents,
-  calculateDistance,
-} from "@livetracking/shared";
+import { Coordinate, TrackingEvents } from "@livetracking/shared";
 import { TrackerMarkerIcon } from "./tracker-marker-icon";
 import { useOutsideClick } from "~/hooks";
 import TrackerControlCard from "./tracker-control-card";
 
-const MIN_DISTANCE_METERS = 10;
-const TRACKING_INTERVAL = 1000; // 1 second
+const TRACKING_INTERVAL = 1000;
 
 export const SharingLocationMap = () => {
   // State
@@ -55,29 +50,6 @@ export const SharingLocationMap = () => {
       const { latitude, longitude } = position.coords;
       const newCoordinate = { lat: latitude, lng: longitude };
 
-      setCoordinate((oldCoordinate) => {
-        if (
-          oldCoordinate &&
-          calculateDistance(oldCoordinate, newCoordinate) < MIN_DISTANCE_METERS
-        ) {
-          return oldCoordinate;
-        }
-
-        socket?.emit(TrackingEvents.TRACKER_UPDATE, newCoordinate);
-        return newCoordinate;
-      });
-    } catch (error) {
-      console.error("Error getting location:", error);
-      toast.error("Failed to update location");
-    }
-  };
-
-  const forceUpdateLocation = async () => {
-    try {
-      const position = await getCurrentPosition();
-      const { latitude, longitude } = position.coords;
-      const newCoordinate = { lat: latitude, lng: longitude };
-
       setCoordinate(() => {
         socket?.emit(TrackingEvents.TRACKER_UPDATE, newCoordinate);
         return newCoordinate;
@@ -112,9 +84,6 @@ export const SharingLocationMap = () => {
     if (!registered) return;
 
     setIsTracking(true);
-
-    // Update location immediately
-    forceUpdateLocation();
 
     // Start interval to update location every second
     intervalRef.current = setInterval(updateLocation, TRACKING_INTERVAL);
