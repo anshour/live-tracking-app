@@ -26,6 +26,16 @@ export class AuthController {
     return this.authService.login(data.email, data.password);
   }
 
+  @Post('register')
+  async register(
+    // TODO : Add validation schema for registration
+    @Body('name') name: string,
+    @Body('email') email: string,
+    @Body('password') password: string,
+  ) {
+    return this.authService.register(name, email, password);
+  }
+
   @UseGuards(AuthGuard)
   @Get('profile')
   getProfile(@Request() req): User {

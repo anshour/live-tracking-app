@@ -1,7 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import type { User } from '@livetracking/shared';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
+import { hash, compare } from 'bcryptjs';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -9,37 +10,60 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
   ) {}
+  async validateCredentials(
+    email: string,
+    password: string,
+  ): Promise<User | null> {
+    const user = await this.userService.findByEmail(email);
 
-  validateCredentials(email: string, password: string): User | null {
-    const user = this.userService.findByEmail(email);
-    if (user && user.password === password) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _password, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+    if (!user) {
+      return null;
     }
 
-    return null;
+    const isPasswordValid = await compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return user;
   }
 
   async login(email: string, password: string) {
-    const user = this.validateCredentials(email, password);
+    const user = await this.validateCredentials(email, password);
+
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
     const payload = { sub: user.id, email: user.email, name: user.name };
 
-    // For simplicity, we use a static expiration time of 2 hours.
-    // In a real application, we might want to use a refresh token strategy
-    const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '2h',
-    });
+    const token = await this.jwtService.signAsync(payload);
 
     return {
       success: true,
       message: 'Login successful',
       user,
       token,
+    };
+  }
+
+  async register(name: string, email: string, password: string) {
+    const existingUser = await this.userService.findByEmail(email);
+    if (existingUser) {
+      throw new UnauthorizedException('Email already in use');
+    }
+
+    const hashedPassword = await hash(password, 10);
+    const newUser = await this.userService.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    return {
+      success: true,
+      message: 'Registration successful',
+      user: newUser,
     };
   }
 }
