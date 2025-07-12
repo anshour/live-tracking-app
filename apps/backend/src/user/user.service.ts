@@ -1,23 +1,21 @@
-import { User } from '@livetracking/shared';
 import { Injectable } from '@nestjs/common';
-
-interface UserWithPassword extends User {
-  password: string;
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
-  // This is a mock user service for demonstration purposes.
-  private users: UserWithPassword[] = [
-    {
-      id: 1,
-      email: 'demo@example.com',
-      name: 'Demo User',
-      password: 'password',
-    },
-  ];
+  constructor(
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+  ) {}
 
-  findByEmail(email: string): UserWithPassword | undefined {
-    return this.users.find((user) => user.email === email);
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async create(user: Partial<User>): Promise<User> {
+    const newUser = this.usersRepository.create(user);
+    return this.usersRepository.save(newUser);
   }
 }
