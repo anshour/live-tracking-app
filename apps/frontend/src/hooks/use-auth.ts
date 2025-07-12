@@ -25,6 +25,17 @@ export const useLogin = () => {
   return mutation;
 };
 
+export const useRegister = () => {
+  const { handleError } = useErrorHandler();
+  const mutation = useMutation({
+    mutationFn: (data: any) => http.post<any>("/auth/register", data),
+    throwOnError: false,
+    onError: handleError,
+  });
+
+  return mutation;
+};
+
 export const useFetchProfile = () => {
   const query = useQuery({
     queryKey: queryKeys.profile,
