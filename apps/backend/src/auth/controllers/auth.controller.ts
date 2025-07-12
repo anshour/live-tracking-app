@@ -14,6 +14,7 @@ import { AuthGuard } from '../guards/auth.guard';
 import { HttpZodValidationPipe } from 'src/common/pipes/http-zod-validation.pipe';
 import { LoginDto, loginSchema } from '../dto/login.dto';
 import { User } from '@livetracking/shared';
+import { RegisterDto, registerSchema } from '../dto/register.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -23,17 +24,31 @@ export class AuthController {
   @Post('login')
   @UsePipes(new HttpZodValidationPipe(loginSchema))
   async login(@Body() data: LoginDto): Promise<any> {
-    return this.authService.login(data.email, data.password);
+    const { user, token } = await this.authService.login(
+      data.email,
+      data.password,
+    );
+
+    return {
+      message: 'Login successful',
+      user,
+      token,
+    };
   }
 
   @Post('register')
-  async register(
-    // TODO : Add validation schema for registration
-    @Body('name') name: string,
-    @Body('email') email: string,
-    @Body('password') password: string,
-  ) {
-    return this.authService.register(name, email, password);
+  @UsePipes(new HttpZodValidationPipe(registerSchema))
+  async register(@Body() data: RegisterDto) {
+    const user = await this.authService.register(
+      data.name,
+      data.email,
+      data.password,
+    );
+
+    return {
+      message: 'Registration successful',
+      user,
+    };
   }
 
   @UseGuards(AuthGuard)

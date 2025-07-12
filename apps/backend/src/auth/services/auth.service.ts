@@ -39,12 +39,7 @@ export class AuthService {
 
     const token = await this.jwtService.signAsync(payload);
 
-    return {
-      success: true,
-      message: 'Login successful',
-      user,
-      token,
-    };
+    return { user, token };
   }
 
   async register(name: string, email: string, password: string) {
@@ -60,10 +55,6 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    return {
-      success: true,
-      message: 'Registration successful',
-      user: newUser,
-    };
+    return newUser;
   }
 }
