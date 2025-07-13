@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 import { hash, compare } from 'bcryptjs';
-import { User } from 'src/user/user.entity';
+import { UserEntity } from 'src/user/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +13,7 @@ export class AuthService {
   async validateCredentials(
     email: string,
     password: string,
-  ): Promise<User | null> {
+  ): Promise<UserEntity | null> {
     const user = await this.userService.findByEmail(email);
 
     if (!user) {

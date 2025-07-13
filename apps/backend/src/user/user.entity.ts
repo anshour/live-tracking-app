@@ -1,7 +1,8 @@
+import { User } from '@livetracking/shared';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
-export class User {
+export class UserEntity implements User {
   @PrimaryGeneratedColumn()
   id: number;
 
