@@ -6,11 +6,13 @@ import {
   useStopSimulation,
 } from "~/hooks";
 import { Button, IconButton, Input, StatusIndicator } from "../ui";
-import { Search } from "lucide-react";
+import { MapPinPlus, Search } from "lucide-react";
 import { timeAgo } from "~/utils";
+import { ConnectTrackerModal } from "./connect-tracker-modal";
 
 const TrackerListSection = () => {
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [isConnectModalOpen, setIsConnectModalOpen] = React.useState(false);
   const { trackers, selectedTracker, setSelectedTracker } = useTrackerData();
 
   const filteredTrackers = React.useMemo(
@@ -61,7 +63,8 @@ const TrackerListSection = () => {
                     Coordinate:{" "}
                     {tracker.lastLat !== null ? (
                       <span>
-                        {tracker.lastLat.toFixed(7)}, {tracker.lastLng.toFixed(7)}
+                        {tracker.lastLat.toFixed(7)},{" "}
+                        {tracker.lastLng.toFixed(7)}
                       </span>
                     ) : (
                       "Unknown location"
@@ -83,32 +86,40 @@ const TrackerListSection = () => {
           </p>
         </div>
       )}
+      <br />
       <div className="border-b border-gray-200 mb-2"></div>
-      {simulationStatus && (
-        <div className="flex gap-2 items-center">
-          <Button
-            size="small"
-            isLoading={isStopping}
-            onClick={() => stopSimulation()}
-          >
-            Stop Simulation
-          </Button>
-          <p className="text-gray-700 text-sm">Simulation is running</p>
-        </div>
-      )}
+      <div className="flex gap-2 items-center">
+        <Button
+          size="small"
+          onClick={() => setIsConnectModalOpen(true)}
+          className="whitespace-nowrap"
+          leftIcon={MapPinPlus}
+        >
+          Connect Tracker
+        </Button>
 
-      {!simulationStatus && (
-        <div className="flex gap-2 items-center">
-          <Button
+        {/* TODO : Add start and stop simulation button */}
+        {/* <Button
+          size="small"
+          isLoading={isStopping}
+          onClick={() => stopSimulation()}
+        >
+          Stop Simulation
+        </Button> */}
+        {/* 
+        <Button
             size="small"
             isLoading={isStarting}
             onClick={() => startSimulation()}
           >
             Start Simulation
           </Button>
-          <p className="text-gray-700 text-sm">Simulation is stopped</p>
-        </div>
-      )}
+           */}
+      </div>
+      <ConnectTrackerModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+      />
     </>
   );
 };

@@ -63,4 +63,7 @@ export class TrackerEntity implements Tracker {
 
   @Column({ name: 'user_id', unique: true })
   userId: number;
+
+  @Column({ name: 'access_code', length: 19 })
+  accessCode: string;
 }

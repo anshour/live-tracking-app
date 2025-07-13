@@ -1,3 +1,3 @@
 export const trackingRooms = {
-  SUBSCRIBED: 'subscribed',
+  getRoomByAccessCode: (accessCode: string) => `tracker:${accessCode}`,
 };

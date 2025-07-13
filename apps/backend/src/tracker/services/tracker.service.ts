@@ -51,7 +51,7 @@ export class TrackerService {
 
   async addTracker(
     userId: number,
-    tracker: Omit<Tracker, 'id' | 'isOnline' | 'lastSeen'>,
+    tracker: Omit<Tracker, 'id' | 'isOnline' | 'lastSeen' | 'accessCode'>,
   ): Promise<TrackerEntity> {
     const existingTracker = await this.findTrackerByUserId(userId);
 
@@ -68,6 +68,7 @@ export class TrackerService {
     newTracker.lastLat = tracker.lastLat;
     newTracker.lastLng = tracker.lastLng;
     newTracker.userId = userId;
+    newTracker.accessCode = await this.generateUniqueAccessCode();
 
     await this.trackerRepository.save(newTracker);
 
@@ -132,5 +133,50 @@ export class TrackerService {
       where: { trackerId: id },
       order: { timestamp: 'DESC' },
     });
+  }
+
+  async findTrackerByAccessCode(
+    accessCode: string,
+  ): Promise<TrackerEntity | null> {
+    const tracker = await this.trackerRepository.findOne({
+      where: { accessCode: accessCode.toUpperCase().replace(/\s/g, '') },
+    });
+    return tracker;
+  }
+
+  /**
+   * Generate unique access code (check database untuk memastikan tidak duplikat)
+   */
+  private async generateUniqueAccessCode(): Promise<string> {
+    let code: string;
+    let isUnique = false;
+
+    do {
+      code = this.generateAccessCode();
+      const existingTracker = await this.trackerRepository.findOne({
+        where: { accessCode: code },
+      });
+      isUnique = !existingTracker;
+    } while (!isUnique);
+
+    return code;
+  }
+
+  private generateAccessCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Tanpa 0, O, I, 1
+    let code = '';
+
+    // Generate 16 karakter
+    for (let i = 0; i < 16; i++) {
+      const randomIndex = Math.floor(Math.random() * chars.length);
+      code += chars[randomIndex];
+
+      // Tambah dash setelah 4 karakter pertama
+      if (i === 3) {
+        code += '-';
+      }
+    }
+
+    return code;
   }
 }

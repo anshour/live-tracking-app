@@ -1,6 +1,8 @@
 export const TrackingEvents = {
   TRACKER_SUBSCRIBE: "tracker:subscribe",
+  TRACKER_SUBSCRIBE_BY_ACCESS_CODE: "tracker:subscribe:access_code",
   TRACKER_UNSUBSCRIBE: "tracker:unsubscribe",
+  TRACKER_UNSUBSCRIBE_BY_ACCESS_CODE: "tracker:unsubscribe:access_code",
 
   TRACKER_REGISTER: "tracker:register",
   TRACKER_REGISTERED: "tracker:registered",

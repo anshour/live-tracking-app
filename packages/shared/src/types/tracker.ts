@@ -8,6 +8,7 @@ export interface Tracker {
   lastLocationName: string;
   lastLat: number;
   lastLng: number;
+  accessCode: string;
 }
 
 export interface TrackerHistory {

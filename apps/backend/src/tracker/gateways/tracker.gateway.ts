@@ -22,6 +22,10 @@ import {
   UpdateLocationDto,
   updateLocationSchema,
 } from '../dto/update-location.dto';
+import {
+  SubscribeByAccessCodeDto,
+  subscribeByAccessCodeSchema,
+} from '../dto/subscribe-by-access-code.dto';
 import { TrackerNotFoundException } from '../exceptions/tracker-not-found.exception';
 import { AuthSocketGuard } from 'src/auth/guards/auth-socket.guard';
 
@@ -52,31 +56,6 @@ export class TrackerGateway
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
-
-    // const tracker = await this.trackerService.findTrackerByUserId(
-    //   client.data.user!.id,
-    // );
-
-    // if (tracker) {
-    //   await this.trackerService.stopTracker(tracker.id);
-    //   this.server
-    //     .to(trackingRooms.SUBSCRIBED)
-    //     .emit(TrackingEvents.TRACKER_STOPPED, tracker);
-    // }
-  }
-
-  @SubscribeMessage(TrackingEvents.TRACKER_SUBSCRIBE)
-  async handleSubscribe(@ConnectedSocket() client: Socket) {
-    await client.join(trackingRooms.SUBSCRIBED);
-
-    return { status: 'success', message: 'Subscribed to tracking room' };
-  }
-
-  @SubscribeMessage(TrackingEvents.TRACKER_UNSUBSCRIBE)
-  async handleUnsubscribe(@ConnectedSocket() client: Socket) {
-    await client.leave(trackingRooms.SUBSCRIBED);
-
-    return { status: 'success', message: 'Unsubscribed from tracking room' };
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_REGISTER)
@@ -85,17 +64,18 @@ export class TrackerGateway
     @MessageBody() data: RegisterTrackerDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const tracker = await this.trackerService.addTracker(client.data.user!.id, {
+    const userId = Number(client.data.user!.id);
+    const tracker = await this.trackerService.addTracker(userId, {
       name: client.data.user!.name || 'Unknown Tracker',
       socketClientId: client.id,
       lastLat: data.lat,
       lastLng: data.lng,
       lastLocationName: 'Unknown Location', // TODO: Resolve location name
-      userId: client.data.user!.id,
+      userId: userId,
     });
 
     this.server
-      .to(trackingRooms.SUBSCRIBED)
+      .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
       .emit(TrackingEvents.TRACKER_REGISTERED, tracker);
   }
 
@@ -106,9 +86,8 @@ export class TrackerGateway
     data: UpdateLocationDto,
     @ConnectedSocket() client: Socket,
   ) {
-    let tracker = await this.trackerService.findTrackerByUserId(
-      client.data.user!.id,
-    );
+    const userId = Number(client.data.user!.id);
+    let tracker = await this.trackerService.findTrackerByUserId(userId);
 
     if (!tracker) {
       throw new TrackerNotFoundException();
@@ -120,39 +99,86 @@ export class TrackerGateway
     });
 
     this.server
-      .to(trackingRooms.SUBSCRIBED)
+      .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
       .emit(TrackingEvents.TRACKER_UPDATED, tracker);
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_STOP)
   async handleLocationStop(@ConnectedSocket() client: Socket) {
-    const tracker = await this.trackerService.findTrackerByUserId(
-      client.data.user!.id,
-    );
+    const userId = Number(client.data.user!.id);
+    const tracker = await this.trackerService.findTrackerByUserId(userId);
 
     if (!tracker) {
       throw new TrackerNotFoundException();
     }
 
     await this.trackerService.stopTracker(tracker.id);
+
     this.server
-      .to(trackingRooms.SUBSCRIBED)
+      .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
       .emit(TrackingEvents.TRACKER_STOPPED, tracker);
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_REMOVE)
   async handleTrackerRemove(@ConnectedSocket() client: Socket) {
-    const tracker = await this.trackerService.findTrackerByUserId(
-      client.data.user!.id,
-    );
+    const userId = Number(client.data.user!.id);
+    const tracker = await this.trackerService.findTrackerByUserId(userId);
 
     if (!tracker) {
       throw new TrackerNotFoundException();
     }
 
     await this.trackerService.removeTracker(tracker.id);
+
     this.server
-      .to(trackingRooms.SUBSCRIBED)
+      .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
       .emit(TrackingEvents.TRACKER_REMOVED, tracker);
+  }
+
+  @SubscribeMessage(TrackingEvents.TRACKER_SUBSCRIBE_BY_ACCESS_CODE)
+  @UsePipes(new SocketZodValidationPipe(subscribeByAccessCodeSchema))
+  async handleSubscribeByAccessCode(
+    @MessageBody() data: SubscribeByAccessCodeDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const tracker = await this.trackerService.findTrackerByAccessCode(
+      data.accessCode,
+    );
+
+    if (!tracker) {
+      return {
+        status: 'failed',
+      };
+    }
+
+    const trackerRoom = trackingRooms.getRoomByAccessCode(tracker.accessCode);
+    await client.join(trackerRoom);
+
+    return {
+      status: 'success',
+    };
+  }
+
+  @SubscribeMessage(TrackingEvents.TRACKER_UNSUBSCRIBE_BY_ACCESS_CODE)
+  @UsePipes(new SocketZodValidationPipe(subscribeByAccessCodeSchema))
+  async handleUnsubscribeByAccessCode(
+    @MessageBody() data: SubscribeByAccessCodeDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const tracker = await this.trackerService.findTrackerByAccessCode(
+      data.accessCode,
+    );
+
+    if (!tracker) {
+      throw new TrackerNotFoundException();
+    }
+
+    const trackerRoom = trackingRooms.getRoomByAccessCode(tracker.accessCode);
+    await client.leave(trackerRoom);
+
+    return {
+      status: 'success',
+      message: `Unsubscribed from tracker: ${tracker.name}`,
+    };
   }
 }
