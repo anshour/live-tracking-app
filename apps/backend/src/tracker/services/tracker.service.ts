@@ -171,8 +171,7 @@ export class TrackerService {
       const randomIndex = Math.floor(Math.random() * chars.length);
       code += chars[randomIndex];
 
-      // Tambah dash setelah 4 karakter pertama
-      if (i === 3) {
+      if ((i + 1) % 4 === 0 && i < 15) {
         code += '-';
       }
     }
