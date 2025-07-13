@@ -42,17 +42,6 @@ export default function LoginPage() {
         <h1 className="text-center text-xl font-semibold mb-6">
           Login to Live Tracking
         </h1>
-
-        <div className="bg-gray-200 p-2 rounded-md mb-2">
-          <p className="text-sm">
-            For demonstration purposes, you can use the following credentials:
-            <br />
-            <br />
-            <strong>Email:</strong> demo@example.com
-            <br />
-            <strong>Password:</strong> password
-          </p>
-        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             type="email"
