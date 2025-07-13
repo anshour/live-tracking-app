@@ -8,7 +8,7 @@ import { useTrackerData } from "~/context";
 
 export const TrackerDetailSection = () => {
   const { selectedTracker, setSelectedTracker } = useTrackerData();
-  const { histories } = useFetchTrackerHistory(selectedTracker?.id || "");
+  const { histories } = useFetchTrackerHistory(selectedTracker?.id || 0);
 
   return (
     <div className="max-h-96 overflow-auto border border-gray-200 p-2 rounded-md">
@@ -25,10 +25,10 @@ export const TrackerDetailSection = () => {
             </p>
             <p className="text-sm text-gray-500">
               Coordinate:{" "}
-              {selectedTracker?.coordinate !== null ? (
+              {selectedTracker?.lastLat !== null ? (
                 <span>
-                  {selectedTracker?.coordinate.lat.toFixed(7)},{" "}
-                  {selectedTracker?.coordinate.lng.toFixed(7)}
+                  {selectedTracker?.lastLat.toFixed(7)},{" "}
+                  {selectedTracker?.lastLng.toFixed(7)}
                 </span>
               ) : (
                 "Unknown location"
@@ -71,10 +71,10 @@ export const TrackerDetailSection = () => {
                 {dayjs(history.timestamp).format("YYYY-MM-DD HH:mm:ss")}
               </td>
               <td className="text-sm text-gray-900 py-2 px-1 font-mono">
-                {history.coordinate.lat.toFixed(7)}
+                {history.lat.toFixed(7)}
               </td>
               <td className="text-sm text-gray-900 py-2 px-1 font-mono">
-                {history.coordinate.lng.toFixed(7)}
+                {history.lng.toFixed(7)}
               </td>
             </tr>
           ))}

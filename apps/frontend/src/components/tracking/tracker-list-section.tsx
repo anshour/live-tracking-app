@@ -59,10 +59,9 @@ const TrackerListSection = () => {
                   <p className="text-sm font-semibold">{tracker.name}</p>
                   <p className="text-sm text-gray-500">
                     Coordinate:{" "}
-                    {tracker.coordinate !== null ? (
+                    {tracker.lastLat !== null ? (
                       <span>
-                        {tracker.coordinate.lat.toFixed(7)},{" "}
-                        {tracker.coordinate.lng.toFixed(7)}
+                        {tracker.lastLat.toFixed(7)}, {tracker.lastLng.toFixed(7)}
                       </span>
                     ) : (
                       "Unknown location"

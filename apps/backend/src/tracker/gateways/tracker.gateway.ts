@@ -53,13 +53,16 @@ export class TrackerGateway
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
 
-    const tracker = this.trackerService.findTrackerBySocketClient(client.id);
-    if (tracker) {
-      this.trackerService.stopTracker(tracker.id);
-      this.server
-        .to(trackingRooms.SUBSCRIBED)
-        .emit(TrackingEvents.TRACKER_STOPPED, tracker);
-    }
+    // const tracker = await this.trackerService.findTrackerByUserId(
+    //   client.data.user!.id,
+    // );
+
+    // if (tracker) {
+    //   await this.trackerService.stopTracker(tracker.id);
+    //   this.server
+    //     .to(trackingRooms.SUBSCRIBED)
+    //     .emit(TrackingEvents.TRACKER_STOPPED, tracker);
+    // }
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_SUBSCRIBE)
@@ -78,17 +81,17 @@ export class TrackerGateway
 
   @SubscribeMessage(TrackingEvents.TRACKER_REGISTER)
   @UsePipes(new SocketZodValidationPipe(registerTrackerSchema))
-  handleTrackerRegister(
+  async handleTrackerRegister(
     @MessageBody() data: RegisterTrackerDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const tracker = this.trackerService.addTracker({
-      name: `${client.data?.user?.name || 'Unknown Tracker'}`,
+    const tracker = await this.trackerService.addTracker(client.data.user!.id, {
+      name: client.data.user!.name || 'Unknown Tracker',
       socketClientId: client.id,
-      coordinate: {
-        lat: data.lat,
-        lng: data.lng,
-      },
+      lastLat: data.lat,
+      lastLng: data.lng,
+      lastLocationName: 'Unknown Location', // TODO: Resolve location name
+      userId: client.data.user!.id,
     });
 
     this.server
@@ -98,18 +101,20 @@ export class TrackerGateway
 
   @SubscribeMessage(TrackingEvents.TRACKER_UPDATE)
   @UsePipes(new SocketZodValidationPipe(updateLocationSchema))
-  handleLocationUpdate(
+  async handleLocationUpdate(
     @MessageBody()
     data: UpdateLocationDto,
     @ConnectedSocket() client: Socket,
   ) {
-    let tracker = this.trackerService.findTrackerBySocketClient(client.id);
+    let tracker = await this.trackerService.findTrackerByUserId(
+      client.data.user!.id,
+    );
 
     if (!tracker) {
       throw new TrackerNotFoundException();
     }
 
-    tracker = this.trackerService.updateLocation(tracker.id, {
+    tracker = await this.trackerService.updateLocation(tracker.id, {
       lat: data.lat,
       lng: data.lng,
     });
@@ -120,27 +125,32 @@ export class TrackerGateway
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_STOP)
-  handleLocationStop(@ConnectedSocket() client: Socket) {
-    const tracker = this.trackerService.findTrackerBySocketClient(client.id);
+  async handleLocationStop(@ConnectedSocket() client: Socket) {
+    const tracker = await this.trackerService.findTrackerByUserId(
+      client.data.user!.id,
+    );
+
     if (!tracker) {
       throw new TrackerNotFoundException();
     }
 
-    this.trackerService.stopTracker(tracker.id);
+    await this.trackerService.stopTracker(tracker.id);
     this.server
       .to(trackingRooms.SUBSCRIBED)
       .emit(TrackingEvents.TRACKER_STOPPED, tracker);
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_REMOVE)
-  handleTrackerRemove(@ConnectedSocket() client: Socket) {
-    const tracker = this.trackerService.findTrackerBySocketClient(client.id);
+  async handleTrackerRemove(@ConnectedSocket() client: Socket) {
+    const tracker = await this.trackerService.findTrackerByUserId(
+      client.data.user!.id,
+    );
 
     if (!tracker) {
       throw new TrackerNotFoundException();
     }
 
-    this.trackerService.removeTracker(tracker.id);
+    await this.trackerService.removeTracker(tracker.id);
     this.server
       .to(trackingRooms.SUBSCRIBED)
       .emit(TrackingEvents.TRACKER_REMOVED, tracker);

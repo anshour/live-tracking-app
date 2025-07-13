@@ -9,12 +9,12 @@ export class TrackerController {
   constructor(private readonly trackerService: TrackerService) {}
 
   @Get()
-  getAllTrackers(): Tracker[] {
+  async getAllTrackers(): Promise<Tracker[]> {
     return this.trackerService.getAllTrackers();
   }
 
   @Get(':id/histories')
-  getTrackerHistory(@Param('id') id: string): TrackerHistory[] {
-    return this.trackerService.getTrackerHistory(id);
+  async getTrackerHistory(@Param('id') id: string): Promise<TrackerHistory[]> {
+    return this.trackerService.getTrackerHistory(parseInt(id, 10));
   }
 }

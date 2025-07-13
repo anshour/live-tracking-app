@@ -1,5 +1,5 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { TrackerSimulationService } from '../services/tracker-simulation.service';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('api/trackers/simulation')
@@ -7,8 +7,8 @@ import { AuthGuard } from 'src/auth/guards/auth.guard';
 export class TrackerSimulationController {
   constructor(private readonly simulationService: TrackerSimulationService) {}
   @Post('start')
-  simulateTracker(): Record<string, string> {
-    this.simulationService.startSimulation();
+  async simulateTracker(): Promise<Record<string, string>> {
+    await this.simulationService.startSimulation();
 
     return {
       message: 'Tracker simulation started',
@@ -16,8 +16,8 @@ export class TrackerSimulationController {
   }
 
   @Post('stop')
-  stopSimulation(): Record<string, string> {
-    this.simulationService.stopSimulation();
+  async stopSimulation(): Promise<Record<string, string>> {
+    await this.simulationService.stopSimulation();
 
     return {
       message: 'Tracker simulation stopped',

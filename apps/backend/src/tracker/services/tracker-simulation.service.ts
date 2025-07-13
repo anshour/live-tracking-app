@@ -23,46 +23,53 @@ export class TrackerSimulationService implements OnModuleDestroy {
 
     private readonly trackerGateway: TrackerGateway,
   ) {}
-  onModuleDestroy() {
-    this.stopSimulation();
+  async onModuleDestroy() {
+    await this.stopSimulation();
   }
 
-  startSimulation(): void {
+  async startSimulation(): Promise<void> {
     if (this.simulationActive) {
       return;
     }
 
     this.simulationActive = true;
-    this.createSimulationTrackers();
+    await this.createSimulationTrackers();
   }
 
-  stopSimulation(): void {
+  async stopSimulation(): Promise<void> {
     if (!this.simulationActive) {
       return;
     }
 
     this.simulationActive = false;
     this.clearAllIntervals();
-    this.removeSimulationTrackers();
+    await this.removeSimulationTrackers();
   }
 
   isSimulationActive(): boolean {
     return this.simulationActive;
   }
 
-  private createSimulationTrackers(): void {
+  private async createSimulationTrackers(): Promise<void> {
     for (let i = 1; i <= this.SIMULATION_COUNT; i++) {
-      const tracker = this.trackerService.addTracker({
-        name: `Secret Agent ${i}`,
-        socketClientId: `simulation-client-${i}`,
-        coordinate: this.generateRandomCoordinate(),
-      });
+      const coordinate = this.generateRandomCoordinate();
+      const tracker = await this.trackerService.addTracker(
+        i + 1000, // Using unique user IDs for simulation
+        {
+          name: `Secret Agent ${i}`,
+          socketClientId: `simulation-client-${i}`,
+          lastLat: coordinate.lat,
+          lastLng: coordinate.lng,
+          lastLocationName: 'Unknown Location',
+          userId: i + 1000,
+        },
+      );
 
       this.trackerGateway.server
         .to(trackingRooms.SUBSCRIBED)
         .emit(TrackingEvents.TRACKER_REGISTERED, tracker);
 
-      this.startLocationUpdateSimulation(tracker.id);
+      void this.startLocationUpdateSimulation(tracker.id);
       this.startOnlineStatusSimulation(tracker.id);
     }
   }
@@ -78,18 +85,19 @@ export class TrackerSimulationService implements OnModuleDestroy {
     };
   }
 
-  private startLocationUpdateSimulation(trackerId: string): void {
-    const updateLocation = () => {
+  private async startLocationUpdateSimulation(
+    trackerId: number,
+  ): Promise<void> {
+    const updateLocation = async () => {
       if (!this.simulationActive) return;
 
       try {
-        const tracker = this.trackerService
-          .getAllTrackers()
-          .find((t) => t.id === trackerId);
+        const trackers = await this.trackerService.getAllTrackers();
+        const tracker = trackers.find((t) => t.id === trackerId);
         if (!tracker || !tracker.isOnline) return;
 
         const newCoordinate = this.generateRandomCoordinate();
-        const updatedTracker = this.trackerService.updateLocation(
+        const updatedTracker = await this.trackerService.updateLocation(
           trackerId,
           newCoordinate,
         );
@@ -108,31 +116,36 @@ export class TrackerSimulationService implements OnModuleDestroy {
       if (this.simulationActive) {
         const nextUpdateDelay = Math.random() * 5000 + 2000; // 2-7 seconds
         const timeoutId = setTimeout(() => {
-          updateLocation();
+          updateLocation().catch((error) => {
+            console.warn(
+              `Location update failed for tracker ${trackerId}:`,
+              error.message,
+            );
+          });
         }, nextUpdateDelay);
         this.simulationIntervals.set(`location-${trackerId}`, timeoutId);
       }
     };
 
-    updateLocation();
+    await updateLocation();
   }
 
-  private startOnlineStatusSimulation(trackerId: string): void {
-    const toggleStatus = () => {
+  private startOnlineStatusSimulation(trackerId: number): void {
+    const toggleStatus = async () => {
       if (!this.simulationActive) return;
       try {
-        const tracker = this.trackerService
-          .getAllTrackers()
-          .find((t) => t.id === trackerId);
+        const trackers = await this.trackerService.getAllTrackers();
+        const tracker = trackers.find((t) => t.id === trackerId);
         if (!tracker) return;
 
         if (tracker.isOnline) {
-          const stoppedTracker = this.trackerService.stopTracker(trackerId);
+          const stoppedTracker =
+            await this.trackerService.stopTracker(trackerId);
           this.trackerGateway.server
             .to(trackingRooms.SUBSCRIBED)
             .emit(TrackingEvents.TRACKER_STOPPED, stoppedTracker);
         } else {
-          const updatedTracker = this.trackerService.updateLocation(
+          const updatedTracker = await this.trackerService.updateLocation(
             trackerId,
             this.generateRandomCoordinate(),
           );
@@ -151,7 +164,12 @@ export class TrackerSimulationService implements OnModuleDestroy {
       if (this.simulationActive) {
         const nextStatusDelay = Math.random() * 30000 + 75000;
         const timeoutId = setTimeout(() => {
-          toggleStatus();
+          toggleStatus().catch((error) => {
+            console.warn(
+              `Status toggle failed for tracker ${trackerId}:`,
+              error.message,
+            );
+          });
         }, nextStatusDelay);
         this.simulationIntervals.set(`status-${trackerId}`, timeoutId);
       }
@@ -159,7 +177,12 @@ export class TrackerSimulationService implements OnModuleDestroy {
 
     const initialDelay = Math.random() * 60000 + 120000; // 2-3 minutes
     const timeoutId = setTimeout(() => {
-      toggleStatus();
+      toggleStatus().catch((error) => {
+        console.warn(
+          `Initial status toggle failed for tracker ${trackerId}:`,
+          error.message,
+        );
+      });
     }, initialDelay);
     this.simulationIntervals.set(`status-${trackerId}`, timeoutId);
   }
@@ -169,15 +192,15 @@ export class TrackerSimulationService implements OnModuleDestroy {
     this.simulationIntervals.clear();
   }
 
-  private removeSimulationTrackers(): void {
-    const trackers = this.trackerService.getAllTrackers();
+  private async removeSimulationTrackers(): Promise<void> {
+    const trackers = await this.trackerService.getAllTrackers();
     const simulationTrackers = trackers.filter((t) =>
       t.socketClientId.startsWith('simulation-client'),
     );
 
-    simulationTrackers.forEach((tracker) => {
+    for (const tracker of simulationTrackers) {
       try {
-        this.trackerService.removeTracker(tracker.id);
+        await this.trackerService.removeTracker(tracker.id);
         this.trackerGateway.server
           .to(trackingRooms.SUBSCRIBED)
           .emit(TrackingEvents.TRACKER_REMOVED, tracker);
@@ -187,6 +210,6 @@ export class TrackerSimulationService implements OnModuleDestroy {
           error.message,
         );
       }
-    });
+    }
   }
 }

@@ -22,11 +22,11 @@ const LiveTrackingMapContent = () => {
   const handleClickCenter = () => {
     setHasInteracted(false);
     const validTrackers = trackers.filter(
-      (tracker) => tracker.coordinate !== null
+      (tracker) => tracker.lastLat !== null
     );
     const bounds = new window.google.maps.LatLngBounds();
     validTrackers.forEach((tracker) => {
-      bounds.extend(tracker.coordinate!);
+      bounds.extend({ lat: tracker.lastLat!, lng: tracker.lastLng! });
     });
     if (map) {
       map.panTo(MAP_DEFAULT_CENTER);
@@ -37,11 +37,14 @@ const LiveTrackingMapContent = () => {
   useEffect(() => {
     if (map) {
       const validTrackers = trackers.filter(
-        (tracker) => tracker.coordinate !== null
+        (tracker) => tracker.lastLat !== null
       );
 
-      if (selectedTracker && selectedTracker.coordinate) {
-        map.panTo(selectedTracker.coordinate);
+      if (selectedTracker && selectedTracker.lastLat !== null) {
+        map.panTo({
+          lat: selectedTracker.lastLat,
+          lng: selectedTracker.lastLng,
+        });
         map.setZoom(15);
         return;
       }
@@ -51,7 +54,10 @@ const LiveTrackingMapContent = () => {
       }
 
       if (validTrackers.length === 1) {
-        map.panTo(validTrackers[0].coordinate!);
+        map.panTo({
+          lat: validTrackers[0].lastLat!,
+          lng: validTrackers[0].lastLng!,
+        });
         map.setZoom(12);
         return;
       }
@@ -59,7 +65,7 @@ const LiveTrackingMapContent = () => {
       if (validTrackers.length > 1) {
         const bounds = new window.google.maps.LatLngBounds();
         validTrackers.forEach((tracker) => {
-          bounds.extend(tracker.coordinate!);
+          bounds.extend({ lat: tracker.lastLat!, lng: tracker.lastLng! });
         });
 
         map.panToBounds(bounds, { top: 10, bottom: 10, left: 10, right: 10 });
@@ -93,13 +99,13 @@ const LiveTrackingMapContent = () => {
           onDragStart={() => setHasInteracted(true)}
         >
           {trackers
-            .filter((tracker) => tracker.coordinate !== null)
+            .filter((tracker) => tracker.lastLat !== null)
             .map((tracker) => (
               <Marker
                 key={tracker.id}
                 position={{
-                  lat: tracker.coordinate!.lat,
-                  lng: tracker.coordinate!.lng,
+                  lat: tracker.lastLat!,
+                  lng: tracker.lastLng!,
                 }}
                 draggable={false}
                 onClick={() => setSelectedTracker(tracker)}

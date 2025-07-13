@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
-import { useTrackerData } from "~/context";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { MAP_CONTAINER_STYLE, MAP_DEFAULT_CENTER } from "~/constants";
-import toast from "react-hot-toast";
 import { Coordinate, TrackingEvents } from "@livetracking/shared";
 import { TrackerMarkerIcon } from "./tracker-marker-icon";
-import { useOutsideClick } from "~/hooks";
 import TrackerControlCard from "./tracker-control-card";
+import { useTrackerData } from "~/context";
+import { useOutsideClick } from "~/hooks";
+import toast from "react-hot-toast";
 
 const TRACKING_INTERVAL = 1000;
 

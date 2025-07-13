@@ -27,7 +27,7 @@ export const useFetchTrackers = () => {
   return { trackers, ...query };
 };
 
-export const useFetchTrackerHistory = (id: string) => {
+export const useFetchTrackerHistory = (id: number) => {
   const { handleError } = useErrorHandler();
 
   const query = useQuery({
