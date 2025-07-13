@@ -5,7 +5,7 @@ import { Coordinate, TrackingEvents } from "@livetracking/shared";
 import { TrackerMarkerIcon } from "./tracker-marker-icon";
 import TrackerControlCard from "./tracker-control-card";
 import { useTrackerData } from "~/context";
-import { useOutsideClick } from "~/hooks";
+import { useFetchMyTrackerData, useOutsideClick } from "~/hooks";
 import toast from "react-hot-toast";
 
 const TRACKING_INTERVAL = 1000;
@@ -16,6 +16,7 @@ export const SharingLocationMap = () => {
   const [coordinate, setCoordinate] = useState<Coordinate | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const { tracker, refetch } = useFetchMyTrackerData();
 
   // Refs
   const ref = useRef<HTMLDivElement | null>(null);
@@ -67,8 +68,9 @@ export const SharingLocationMap = () => {
       const newCoordinate = { lat: latitude, lng: longitude };
 
       setCoordinate(newCoordinate);
-      socket?.emit(TrackingEvents.TRACKER_REGISTER, newCoordinate);
-      console.log("Tracker register", newCoordinate);
+      socket?.emit(TrackingEvents.TRACKER_REGISTER, newCoordinate, () => {
+        refetch();
+      });
 
       return true;
     } catch (error) {
@@ -125,6 +127,12 @@ export const SharingLocationMap = () => {
         stopTracking();
       });
     }
+
+    return () => {
+      if (socket) {
+        socket.off("exception");
+      }
+    };
   }, [socket]);
 
   useEffect(() => {
@@ -165,6 +173,7 @@ export const SharingLocationMap = () => {
         coordinate={coordinate}
         startTracking={startTracking}
         stopTracking={stopTracking}
+        tracker={tracker}
       />
     </div>
   );

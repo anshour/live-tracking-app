@@ -46,6 +46,24 @@ export const useFetchTrackerHistory = (id: number) => {
   return { histories, ...query };
 };
 
+export const useFetchMyTrackerData = () => {
+  const { handleError } = useErrorHandler();
+
+  const query = useQuery({
+    queryKey: queryKeys.myTrackers,
+    queryFn: () => http.get<Tracker>("/trackers/me"),
+    placeholderData: keepPreviousData,
+    throwOnError: (error: Error) => {
+      handleError(error);
+      return false;
+    },
+  });
+
+  const tracker = query.data?.data || null;
+
+  return { tracker, ...query };
+};
+
 export const useStartSimulation = () => {
   const queryClient = useQueryClient();
   const { handleError } = useErrorHandler();
