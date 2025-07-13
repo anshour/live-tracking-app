@@ -77,6 +77,11 @@ export class TrackerGateway
     this.server
       .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
       .emit(TrackingEvents.TRACKER_REGISTERED, tracker);
+
+    return {
+      status: 'success',
+      message: `Tracker registered with access code: ${tracker.accessCode}`,
+    };
   }
 
   @SubscribeMessage(TrackingEvents.TRACKER_UPDATE)
