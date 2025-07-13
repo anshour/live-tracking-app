@@ -66,7 +66,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
       );
 
       this.trackerGateway.server
-        .to(trackingRooms.SUBSCRIBED)
+        .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
         .emit(TrackingEvents.TRACKER_REGISTERED, tracker);
 
       void this.startLocationUpdateSimulation(tracker.id);
@@ -103,7 +103,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
         );
 
         this.trackerGateway.server
-          .to(trackingRooms.SUBSCRIBED)
+          .to(trackingRooms.getRoomByAccessCode(updatedTracker.accessCode))
           .emit(TrackingEvents.TRACKER_UPDATED, updatedTracker);
       } catch (error) {
         // Tracker might have been removed, ignore error
@@ -142,7 +142,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
           const stoppedTracker =
             await this.trackerService.stopTracker(trackerId);
           this.trackerGateway.server
-            .to(trackingRooms.SUBSCRIBED)
+            .to(trackingRooms.getRoomByAccessCode(stoppedTracker!.accessCode))
             .emit(TrackingEvents.TRACKER_STOPPED, stoppedTracker);
         } else {
           const updatedTracker = await this.trackerService.updateLocation(
@@ -150,7 +150,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
             this.generateRandomCoordinate(),
           );
           this.trackerGateway.server
-            .to(trackingRooms.SUBSCRIBED)
+            .to(trackingRooms.getRoomByAccessCode(updatedTracker.accessCode))
             .emit(TrackingEvents.TRACKER_UPDATED, updatedTracker);
         }
       } catch (error) {
@@ -202,7 +202,7 @@ export class TrackerSimulationService implements OnModuleDestroy {
       try {
         await this.trackerService.removeTracker(tracker.id);
         this.trackerGateway.server
-          .to(trackingRooms.SUBSCRIBED)
+          .to(trackingRooms.getRoomByAccessCode(tracker.accessCode))
           .emit(TrackingEvents.TRACKER_REMOVED, tracker);
       } catch (error) {
         console.warn(
